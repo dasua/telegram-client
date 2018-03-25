@@ -223,7 +223,7 @@ class Telegram {
 	 */
 	public function get_me()
 	{
-		$this->_endpoit  = 'getMes';
+		$this->_endpoit  = 'getMe';
 		$this->_fields   = array();
 		$this->_response = $this->_send_request();
 		if ($this->_response->ok)
