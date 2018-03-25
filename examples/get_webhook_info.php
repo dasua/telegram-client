@@ -27,7 +27,7 @@
  * @author Jesús Guerreiro Real de Asua <jesus@jesusguerreiro.es>
  * @copyright Copyright (c) 2018, Jesús Guerreiro Real de Asua
  * @license	http://opensource.org/licenses/MIT	MIT License
- * @link
+ * @link https://github.com/dasua/telegram-client
  * @filesource
  */
 
@@ -50,6 +50,7 @@ class Telegram_client {
 
 	/**
 	 * Class constructor
+	 * @param string $key bot's private key
 	 */
 	public function __construct($key)
 	{
@@ -57,16 +58,47 @@ class Telegram_client {
 	}
 	/**
 	 * Send getwebhookinfo
-	 *
 	 * @url https://core.telegram.org/bots/api#getwebhookinfo
 	 * @return void
 	 */
 	public function run()
 	{
-		$result = $this->_client->get_webhook_info();
-		var_export($result);
+		$response = $this->_client->get_webhook_info();
+		if ($response->ok !== TRUE)
+		{
+			echo PHP_EOL."Error detected: {$response->error_code} - {$response->description}".PHP_EOL;
+			exit(1);
+		}
+
+		$result = $response->result;
+		echo sprintf("\tURL: %s\n\tHas custom certificate: %s\n\tPending update count: %s",$result->url,empty($result->has_custom_certificate) ? 'No' : 'Yes',$result->pending_update_count);
+		if (!empty($result->last_error_date))
+		{
+			echo PHP_EOL."\t Last error date: ".date('Y-m-d H:i:s',$result->last_error_date);
+		}
+
+		if (!empty($result->last_error_message))
+		{
+			echo PHP_EOL."\t Last error message: ".date('Y-m-d H:i:s',$result->last_error_message);
+		}
+
+		if (!empty($result->max_connections))
+		{
+			echo PHP_EOL."\tMax connections: {$result->max_connections}";
+		}
+
+		if (!empty($result->allowed_updates))
+		{
+			echo PHP_EOL."\tAllowed updates:";
+			foreach($result->allowed_updates as $new_type_update)
+			{
+				echo PHP_EOL."\t\t{$new_type_update}";
+			}
+		}
+
+		echo PHP_EOL;
 	}
 }
 
 $client = new Telegram_client('BOT-KEY');
-$result = $client->run();
+$client->run();

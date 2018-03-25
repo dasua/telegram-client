@@ -26,7 +26,7 @@
  * @author Jesús Guerreiro Real de Asua <jesus@jesusguerreiro.es>
  * @copyright Copyright (c) 2018, Jesús Guerreiro Real de Asua
  * @license	http://opensource.org/licenses/MIT	MIT License
- * @link
+ * @link https://github.com/dasua/telegram-client
  * @filesource
  */
 
@@ -53,35 +53,59 @@ class Telegram_bot {
 
 	/**
 	 * Data revided from POST
-	 * @var ARRAY
+	 * @var array
 	 */
-	private $_data;
+	private $_request;
 
 	/**
 	 * Class constructor
+	 * @throws Telegram_exception
 	 */
 	public function __construct()
 	{
-		$this->_client = new Telegram('BOT-KEY');
-		$this->_data   = json_decode(file_get_contents("php://input"),TRUE);
-		$this->_log    = new Telegram_logger();
-		$this->_log->write(apache_request_headers(),'HEADERS');
-		$this->_log->write($this->_data,'_data');
+		$this->_request = new Telegram_request();
+		$this->_log     = new Telegram_logger();
+		if (function_exists('apache_request_headers'))
+		{
+			$this->_log->write(apache_request_headers(),'HEADERS');
+		}
+
+		$this->_log->write($this->_request,'_request');
+		if (! $this->_request->valid_request)
+		{
+			$txt_error = 'Request not valid';
+			$this->_log->write($txt_error,'FATAL ERROR');
+			unset($this->_log);
+			throw new Telegram_exception($txt_error, 1);
+		}
+
+		$this->_client  = new Telegram('BOT-KEY');
 	}
 
 	/**
 	 * Execute the bot
-	 *
 	 * @return void
 	 */
 	public function run()
 	{
-		$chat         = empty($this->_data['message']['chat']) ? FALSE : (object)$this->_data['message']['chat'];
-		$chat_id      = $chat ? (int)$chat->id : 0;
-		$recived_text = $this->_data['message']['text'];
+		if (!empty($this->_request->message))
+		{
+			$message = $this->_request->message;
+		}
+		elseif (!empty($this->_request->edited_message))
+		{
+			$message = $this->_request->edited_message;
+		}
+		else
+		{
+			$message = new Telegram_message();
+		}
+
+		$chat    = $message->chat;
+		$chat_id = $chat ? $chat->id : 0;
 		if ($chat)
 		{
-			$from = empty($this->_data['message']['from']) ? FALSE : (object)$this->_data['message']['from'];
+			$from = empty($message->from) ? FALSE : $message->from;
 			switch ($chat->type)
 			{
 				case 'private':
@@ -98,34 +122,38 @@ class Telegram_bot {
 								'one_time_keyboard' => FALSE,
 								'resize_keyboard'   => TRUE,
 							);
-						$name = empty($from->username) ? trim("{$from->first_name} {$from->last_name}") : $from->username;
-						switch ($recived_text)
+						switch ($message->text)
 						{
-							case '/start':
 							case 'Start':
-									$message = "Hello <b>{$name}</b>. Your id is <i>{$from->id}</i>. Need help?";
+									$response_text = "Hello <b>{$name}</b>. Your id is <i>{$from->id}</i>. Need help?";
 								break;
 							default:
-									$message = "Pleased to see you again <b>{$name}</b>.\nYour message was:\n<b>{$recived_text}</b>";
+									if ($command = $message->get_command())
+									{
+										$response_text = $this->do_command($command);
+									}
+									else
+									{
+										$response_text = "Pleased to see you again <b>".$from->get_name()."</b>.\nYour message was:\n<b>{$message->text}</b>";
+									}
 								break;
 						}
 
-						$result = $this->_client->send_message($from->id,$message,$options);
+						$result = $this->_client->send_message($from->id,$response_text,$options);
 						$this->_log->write($result,'result');
 					}
 					break;
 				case 'group':
-						$new_members = empty($this->_data['message']['new_chat_members']) ? FALSE : (object)$this->_data['message']['new_chat_members'];
-						if ($new_members)
+						$bot_info = $this->_client->get_me();
+						if ($message->new_chat_members)
 						{
-							$bot_info = $this->_client->get_me();
-							foreach($new_members as $member_info)
+							foreach($message->new_chat_members as $member_info)
 							{
-								if (!$member_info['is_bot'])
+								if (!$member_info->is_bot)
 								{
-									$member_name = empty($member_info['username']) ? $member_info['first_name'] : $member_info['username'];
-									$message = "Hello <a href=\"tg://user?id={$member_info['id']}\">{$member_name}</a>, need help?\nSend me private chat:\n@{$bot_info->result['username']}\n";
-									$result = $this->_client->send_message($chat->id,$message,array('parse_mode'=>'HTML'));
+									$member_name = empty($member_info->username) ? $member_info->first_name : $member_info->username;
+									$message     = "Hello <a href=\"tg://user?id={$member_info['id']}\">{$member_name}</a>, need help?\nSend me private chat:\n@{$bot_info->result['username']}\n";
+									$result      = $this->_client->send_message($chat->id,$message,array('parse_mode'=>'HTML'));
 									$this->_log->write($result,'result');
 								}
 							}
@@ -136,6 +164,37 @@ class Telegram_bot {
 					break;
 			}
 		}
+	}
+
+	/**
+	 * Execute the command
+	 *
+	 * @param  object $command entered
+	 * @return string          text generated
+	 */
+	private function do_command($command)
+	{
+		$name = isset($this->from) ? $this->from->get_name() : '';
+		switch ($command->command)
+		{
+			case '/start':
+					$result = "Hello <b>{$name}</b>. This is your frist visit. Nice to meet you.";
+				break;
+			case '/md5':
+					$result = md5($command->text);
+				break;
+			case '/sha1':
+					$result = sha1($command->text);
+				break;
+			case '/base64':
+					$result = base64_encode($command->text);
+				break;
+			default:
+					$result = "<b>{$name}</b> typed de command: <i>{$command->command}</i>\nAnd the parameters <b>{$command->text}</b>";
+				break;
+		}
+
+		return $result;
 	}
 }
 

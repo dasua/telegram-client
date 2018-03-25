@@ -27,7 +27,7 @@
  * @author Jesús Guerreiro Real de Asua <jesus@jesusguerreiro.es>
  * @copyright Copyright (c) 2018, Jesús Guerreiro Real de Asua
  * @license	http://opensource.org/licenses/MIT	MIT License
- * @link
+ * @link https://github.com/dasua/telegram-client
  * @filesource
  */
 
@@ -50,6 +50,7 @@ class Telegram_client {
 
 	/**
 	 * Class constructor
+	 * @param string $key bot's private key
 	 */
 	public function __construct($key)
 	{
@@ -57,16 +58,42 @@ class Telegram_client {
 	}
 	/**
 	 * Send getwebhookinfo
-	 *
-	 * @url https://core.telegram.org/bots/api#getwebhookinfo
+	 * @url https://core.telegram.org/bots/api#getupdates
 	 * @return void
 	 */
 	public function run()
 	{
-		$result = $this->_client->get_updates();
-		var_export($result);
+		$response = $this->_client->get_updates();
+		if ($response->ok !== TRUE)
+		{
+			echo PHP_EOL."Error detected: {$response->error_code} - {$response->description}".PHP_EOL;
+			exit(1);
+		}
+
+		$result = $response->result;
+		foreach ($result as $num_update => $new_update)
+		{
+			if (isset($new_update->message))
+			{
+				$message = $new_update->message;
+			}
+			elseif(isset($new_update->edited_message))
+			{
+				$message = $new_update->edited_message;
+			}
+			elseif(isset($new_update->channel_post))
+			{
+				$message = $new_update->channel_post;
+			}
+			elseif(isset($new_update->edited_channel_post))
+			{
+				$message = $new_update->edited_channel_post;
+			}
+
+			echo sprintf("Update: %s\n\tUpdate ID: %s\n\tMessage ID: %s\n\tMessage date: %s\n\tMessage text: %s\n",++$num_update,$new_update->update_id,$message->message_id,date('Y-m-d H:i:s',$message->date),$message->text);
+		}
 	}
 }
 
 $client = new Telegram_client('BOT-KEY');
-$result = $client->run();
+$client->run();

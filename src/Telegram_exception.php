@@ -22,11 +22,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *
- * @package Telegram
+ * @package Telegram Exceptions
  * @author Jesús Guerreiro Real de Asua <jesus@jesusguerreiro.es>
  * @copyright Copyright (c) 2018, Jesús Guerreiro Real de Asua
  * @license	http://opensource.org/licenses/MIT	MIT License
- * @link
+ * @link https://github.com/dasua/telegram-client
  * @filesource
  */
 

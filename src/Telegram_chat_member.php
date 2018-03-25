@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 /**
  * MIT License
@@ -23,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *
- * @package Telegram Client Examples
+ * @package Telegram Types
  * @author Jesús Guerreiro Real de Asua <jesus@jesusguerreiro.es>
  * @copyright Copyright (c) 2018, Jesús Guerreiro Real de Asua
  * @license	http://opensource.org/licenses/MIT	MIT License
@@ -31,66 +30,74 @@
  * @filesource
  */
 
-require '../src/Telegram_autoloader.php';
-
 /**
- * Telegram_client Class
+ * Telegram_chat_member Class
  *
- * Implements a client to interact with Telegram
+ * Implements Telegram chat member class
  *
- * @package Telegram Client Examples
+ * @package Telegram
  * @author Jesús Guerreiro Real de Asua <jesus@jesusguerreiro.es>
- */
-class Telegram_client {
-	/**
-	 * Telegram Client
-	 * @var Telegram
-	 */
-	private $_client;
+ * @link https://core.telegram.org/bots/api#chatmember
+  */
+class Telegram_chat_member {
 
 	/**
 	 * Class constructor
-	 * @param string $key bot's private key
+	 *
+	 * @param array $data
 	 */
-	public function __construct($key)
+	public function __construct($data = array())
 	{
-		$this->_client = new Telegram($key);
+		if (is_array($data))
+		{
+			foreach($data as $key => $val)
+			{
+				switch ($key)
+				{
+					//Integers
+					case 'until_date':
+						$this->$key = (int)$val;
+						break;
+					//Boolean
+					case 'can_be_edited':
+					case 'can_change_info':
+					case 'can_post_messages':
+					case 'can_edit_messages':
+					case 'can_delete_messages':
+					case 'can_invite_users':
+					case 'can_restrict_members':
+					case 'can_pin_messages':
+					case 'can_promote_members':
+					case 'can_send_messages':
+					case 'can_send_media_messages':
+					case 'can_send_other_messages':
+					case 'can_add_web_page_previews':
+						$this->$key = (bool)$val;
+						break;
+					//Telegram_user
+					case 'user':
+						$this->$key = new Telegram_user($val);
+						break;
+					default :
+						$this->$key = $val;
+						break;
+				}
+			}
+		}
 	}
 
 	/**
-	 * Send getMe
-	 * @url https://core.telegram.org/bots/api#getme
-	 * @return void
+	 * Getter
+	 * @param  string $name
+	 * @return NULL
 	 */
-	public function run()
+	public function __get($name)
 	{
-		$response = $this->_client->get_me();
-		if ($response->ok !== TRUE)
-		{
-			echo PHP_EOL."Error detected: {$response->error_code} - {$response->description}".PHP_EOL;
-			exit(1);
-		}
+		return NULL;
+	}
 
-		$result = $response->result;
-		echo sprintf("This is your Telegram bot's information:\n\tID: %s\n\tFirst Name: %s",$result->id,$result->first_name);
-		if (!empty($result->last_name))
-		{
-			echo PHP_EOL."\tLast Name: {$result->last_name}";
-		}
-
-		if (!empty($result->username))
-		{
-			echo PHP_EOL."\tUser Name: {$result->username}";
-		}
-
-		if (!empty($result->language_code))
-		{
-			echo PHP_EOL."\tLanguage Code: {$result->language_code}";
-		}
-
-		echo PHP_EOL;
+	public function get_name()
+	{
+		return empty($this->username) ? trim("{$this->first_name}") : $this->username;
 	}
 }
-
-$client = new Telegram_client('BOT-KEY');
-$client->run();

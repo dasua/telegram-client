@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 /**
  * MIT License
@@ -23,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *
- * @package Telegram Client Examples
+ * @package Telegram
  * @author Jesús Guerreiro Real de Asua <jesus@jesusguerreiro.es>
  * @copyright Copyright (c) 2018, Jesús Guerreiro Real de Asua
  * @license	http://opensource.org/licenses/MIT	MIT License
@@ -31,66 +30,66 @@
  * @filesource
  */
 
-require '../src/Telegram_autoloader.php';
-
 /**
- * Telegram_client Class
+ * Telegram_request Class
  *
- * Implements a client to interact with Telegram
+ * Implements Telegram request class
  *
- * @package Telegram Client Examples
+ * @package Telegram
  * @author Jesús Guerreiro Real de Asua <jesus@jesusguerreiro.es>
  */
-class Telegram_client {
+class Telegram_request {
+
 	/**
-	 * Telegram Client
-	 * @var Telegram
+	 * Data received in JSON format
+	 * @var string
 	 */
-	private $_client;
+	private $_json_data;
+
+	/**
+	 * Indicates whether the received request is in correct JSON format
+	 * @var boolean
+	 */
+	var $valid_request;
 
 	/**
 	 * Class constructor
-	 * @param string $key bot's private key
 	 */
-	public function __construct($key)
+	public function __construct()
 	{
-		$this->_client = new Telegram($key);
+		$this->_json_data    = file_get_contents("php://input");
+		$data                = json_decode($this->_json_data,TRUE);
+		$this->valid_request = (json_last_error() === JSON_ERROR_NONE) && !empty($data['update_id']);
+		if ($this->valid_request)
+		{
+			foreach ($data as $key => $val)
+			{
+				switch ($key)
+				{
+					case 'update_id':
+						$this->$key = (int)$val;
+						break;
+					case 'message' :
+					case 'edited_message' :
+					case 'channel_post' :
+					case 'edited_channel_post' :
+						$this->$key = new Telegram_message($val);
+						break;
+					default:
+						$this->$key = $val;
+						break;
+				}
+			}
+		}
 	}
 
 	/**
-	 * Send getMe
-	 * @url https://core.telegram.org/bots/api#getme
-	 * @return void
+	 * Getter
+	 * @param  string $name
+	 * @return NULL
 	 */
-	public function run()
+	public function __get($name)
 	{
-		$response = $this->_client->get_me();
-		if ($response->ok !== TRUE)
-		{
-			echo PHP_EOL."Error detected: {$response->error_code} - {$response->description}".PHP_EOL;
-			exit(1);
-		}
-
-		$result = $response->result;
-		echo sprintf("This is your Telegram bot's information:\n\tID: %s\n\tFirst Name: %s",$result->id,$result->first_name);
-		if (!empty($result->last_name))
-		{
-			echo PHP_EOL."\tLast Name: {$result->last_name}";
-		}
-
-		if (!empty($result->username))
-		{
-			echo PHP_EOL."\tUser Name: {$result->username}";
-		}
-
-		if (!empty($result->language_code))
-		{
-			echo PHP_EOL."\tLanguage Code: {$result->language_code}";
-		}
-
-		echo PHP_EOL;
+		return NULL;
 	}
 }
-
-$client = new Telegram_client('BOT-KEY');
-$client->run();

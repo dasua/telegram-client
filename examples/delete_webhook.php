@@ -27,7 +27,7 @@
  * @author Jesús Guerreiro Real de Asua <jesus@jesusguerreiro.es>
  * @copyright Copyright (c) 2018, Jesús Guerreiro Real de Asua
  * @license	http://opensource.org/licenses/MIT	MIT License
- * @link
+ * @link https://github.com/dasua/telegram-client
  * @filesource
  */
 
@@ -50,6 +50,7 @@ class Telegram_client {
 
 	/**
 	 * Class constructor
+	 * @param string $key bot's private key
 	 */
 	public function __construct($key)
 	{
@@ -58,14 +59,19 @@ class Telegram_client {
 
 	/**
 	 * Send deleteWebhook
-	 *
 	 * @url https://core.telegram.org/bots/api#deletewebhook
 	 * @return void
 	 */
 	public function run()
 	{
 		$result = $this->_client->delete_webhook();
-		var_export($result);
+		if ($result->ok !== TRUE)
+		{
+			echo PHP_EOL."Error detected: {$result->error_code} - {$result->description}".PHP_EOL;
+			exit(1);
+		}
+
+		echo $result->description,PHP_EOL;
 	}
 }
 

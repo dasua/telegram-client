@@ -26,7 +26,7 @@
  * @author Jesús Guerreiro Real de Asua <jesus@jesusguerreiro.es>
  * @copyright Copyright (c) 2018, Jesús Guerreiro Real de Asua
  * @license	http://opensource.org/licenses/MIT	MIT License
- * @link
+ * @link https://github.com/dasua/telegram-client
  * @filesource
  */
 
@@ -109,7 +109,6 @@ class Telegram_logger {
 
 	/**
 	 * Writes data and title into log
-	 *
 	 * @param  mixed $data data to save in the log
 	 * @param  string $title title associated with the data
 	 * @return void

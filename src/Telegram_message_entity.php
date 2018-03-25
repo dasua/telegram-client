@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 /**
  * MIT License
@@ -23,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *
- * @package Telegram Client Examples
+ * @package Telegram Types
  * @author Jesús Guerreiro Real de Asua <jesus@jesusguerreiro.es>
  * @copyright Copyright (c) 2018, Jesús Guerreiro Real de Asua
  * @license	http://opensource.org/licenses/MIT	MIT License
@@ -31,66 +30,80 @@
  * @filesource
  */
 
-require '../src/Telegram_autoloader.php';
-
 /**
- * Telegram_client Class
+ * Telegram_message_entity Class
  *
- * Implements a client to interact with Telegram
+ * Implements Telegram message entity class
  *
- * @package Telegram Client Examples
+ * @package Telegram
  * @author Jesús Guerreiro Real de Asua <jesus@jesusguerreiro.es>
- */
-class Telegram_client {
+ * @link https://core.telegram.org/bots/api#messageentity
+  */
+class Telegram_message_entity {
+
 	/**
-	 * Telegram Client
-	 * @var Telegram
+	 * Text associated to entity
+	 * @var string
 	 */
-	private $_client;
+	var $text = '';
 
 	/**
 	 * Class constructor
-	 * @param string $key bot's private key
+	 * @param array $data
 	 */
-	public function __construct($key)
+	public function __construct($data = array())
 	{
-		$this->_client = new Telegram($key);
+		if (is_array($data))
+		{
+			foreach($data as $key => $val)
+			{
+				switch ($key)
+				{
+					//Integers
+					case 'offset':
+					case 'length':
+						$this->$key = (int)$val;
+						break;
+					//Telegram_user
+					case 'user':
+						$this->$key = new Telegram_user($val);
+						break;
+					default :
+						$this->$key = $val;
+						break;
+				}
+			}
+		}
+	}
+
+	public function __get($name)
+	{
+		switch ($name)
+		{
+			//Telegram_user
+			case 'user':
+				$result = new Telegram_user();
+				break;
+			default:
+				$result = NULL;
+				break;
+		}
+
+		return $result;
 	}
 
 	/**
-	 * Send getMe
-	 * @url https://core.telegram.org/bots/api#getme
-	 * @return void
+	 * Set the entity's text
+	 * @param string $text message's text
 	 */
-	public function run()
+	public function set_text($text)
 	{
-		$response = $this->_client->get_me();
-		if ($response->ok !== TRUE)
+		$this->text = substr($text, $this->offset,$this->length);
+		if ($this->text === FALSE)
 		{
-			echo PHP_EOL."Error detected: {$response->error_code} - {$response->description}".PHP_EOL;
-			exit(1);
+			$this->text = '';
 		}
 
-		$result = $response->result;
-		echo sprintf("This is your Telegram bot's information:\n\tID: %s\n\tFirst Name: %s",$result->id,$result->first_name);
-		if (!empty($result->last_name))
-		{
-			echo PHP_EOL."\tLast Name: {$result->last_name}";
-		}
-
-		if (!empty($result->username))
-		{
-			echo PHP_EOL."\tUser Name: {$result->username}";
-		}
-
-		if (!empty($result->language_code))
-		{
-			echo PHP_EOL."\tLanguage Code: {$result->language_code}";
-		}
-
-		echo PHP_EOL;
+		return $this->text;
 	}
 }
-
-$client = new Telegram_client('BOT-KEY');
-$client->run();

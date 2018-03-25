@@ -27,7 +27,7 @@
  * @author Jesús Guerreiro Real de Asua <jesus@jesusguerreiro.es>
  * @copyright Copyright (c) 2018, Jesús Guerreiro Real de Asua
  * @license	http://opensource.org/licenses/MIT	MIT License
- * @link
+ * @link https://github.com/dasua/telegram-client
  * @filesource
  */
 
@@ -50,6 +50,7 @@ class Telegram_client {
 
 	/**
 	 * Class constructor
+	 * @param string $key bot's private key
 	 */
 	public function __construct($key)
 	{
@@ -58,16 +59,22 @@ class Telegram_client {
 
 	/**
 	 * Send sendmessage
-	 *
 	 * @url https://core.telegram.org/bots/api#sendmessage
 	 * @return void
 	 */
 	public function run()
 	{
-		$result = $this->_client->send_message(00000000,'This a simple <i>test</i> at '.date('Y/m/d H:i:s'),array('parse_mode'=>'HTML'));
-		var_export($result);
+		$response = $this->_client->send_message(00000000,'This a simple <i>test</i> at '.date('Y/m/d H:i:s'),array('parse_mode'=>'HTML'));
+		if ($response->ok !== TRUE)
+		{
+			echo PHP_EOL."Error detected: {$response->error_code} - {$response->description}".PHP_EOL;
+			exit(1);
+		}
+
+		$result = $response->result;
+		echo sprintf("\tMessage id: %s\n\tMessage date: %s\n\tMessage text: %s\n",$result->message_id,date('Y-m-d H:i:s',$result->date),$result->text);
 	}
 }
 
 $client = new Telegram_client('BOT-KEY');
-$result = $client->run();
+$client->run();

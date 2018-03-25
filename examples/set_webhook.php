@@ -1,4 +1,4 @@
-#!/usr/bin/php
+sss#!/usr/bin/php
 <?php
 /**
  * MIT License
@@ -27,7 +27,7 @@
  * @author Jesús Guerreiro Real de Asua <jesus@jesusguerreiro.es>
  * @copyright Copyright (c) 2018, Jesús Guerreiro Real de Asua
  * @license	http://opensource.org/licenses/MIT	MIT License
- * @link
+ * @link https://github.com/dasua/telegram-client
  * @filesource
  */
 
@@ -50,6 +50,7 @@ class Telegram_client {
 
 	/**
 	 * Class constructor
+	 * @param string $key bot's private key
 	 */
 	public function __construct($key)
 	{
@@ -58,16 +59,22 @@ class Telegram_client {
 
 	/**
 	 * Send setwebhookinfo
-	 *
 	 * @url https://core.telegram.org/bots/api#setwebhookinfo
 	 * @return void
 	 */
 	public function run()
 	{
-		$result = $this->_client->set_webhook('https://www.example.com/bot.php');
-		var_export($result);
+		$response = $this->_client->set_webhook('https://www.example.com/bot.php');
+		if ($response->ok !== TRUE)
+		{
+			echo PHP_EOL."Error detected: {$response->error_code} - {$response->description}".PHP_EOL;
+			exit(1);
+		}
+
+		$info_webhook = $this->_client->get_webhook_info();
+		echo sprintf("\tResult: %s\n\tDescription: %s\n\tURL: %s\n",$response->ok ? 'Yes':'No',$response->description,$info_webhook->result->url);
 	}
 }
 
 $client = new Telegram_client('BOT-KEY');
-$result = $client->run();
+$client->run();
